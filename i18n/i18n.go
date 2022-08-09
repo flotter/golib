@@ -35,45 +35,22 @@
 
 package i18n
 
-import "github.com/Xuanwo/go-locale"
-
 // API defines the interface that provides internationalisation
 // for packages. An implementation specific instance of interface
 // must be provided by the application wanting to enable
 // runtime translation.
-type API interface {
-	CurrentLocale() string
+type MarkerAPI interface {
 	G(msgid string) string
 	NG(msgid, msgidPlural string, n int) string
 }
 
-var instance API
+var instance MarkerAPI
 
 // Initialise must be called before any of the API calls will
 // have translation enabled. It is a valid use case to not
 // call Initialise, and still use the API.
-func Initialise(api API) {
-	instance = api
-}
-
-// CurrentLocale returns the BCP 47 locale base.
-// E.g. en_ZA (BCP 47) => en (BCP 47 Base)
-func CurrentLocale() string {
-	if instance == nil {
-		tag, err := locale.Detect()
-		if err != nil {
-			// Unable to obtain locale from OS so
-			// pick a sensible fallback
-			return "en"
-		} else {
-			// Return the detected default
-			base, _ := tag.Base()
-			return base.String()
-		}
-	} else {
-		// Provided by the interface implementation instead
-		return instance.CurrentLocale()
-	}
+func Initialise(markers MarkerAPI) {
+	instance = markers
 }
 
 // G is the shorthand for Gettext behaviour
@@ -88,7 +65,13 @@ func G(msgid string) string {
 // NG is the shorthand for NGettext behaviour
 func NG(msgid string, msgidPlural string, n int) string {
 	if instance == nil {
-		return msgid
+		if n == 1 {
+			// Singular
+			return msgid
+		} else {
+			// Plural
+			return msgidPlural
+		}
 	} else {
 		return instance.NG(msgid, msgidPlural, n)
 	}
